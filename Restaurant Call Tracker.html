@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Call Tracker</title>
+<style>
+:root{--bg:#f3f5f2;--card:#fff;--ink:#16211c;--mute:#5f6d66;--line:#d9dfdb;--acc:#1f6f54;--ok:#1f7a4d;--okbg:#dff3e6;--no:#b3321f;--nobg:#fae0db;--na:#8a6100;--nabg:#fbefc9;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121815;--card:#1b241f;--ink:#e8efea;--mute:#98a89f;--line:#2c3932;--acc:#5cc29a;--ok:#6fd49b;--okbg:#1d3a2a;--no:#ff9a88;--nobg:#42231e;--na:#f0c964;--nabg:#3d3213;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121815;--card:#1b241f;--ink:#e8efea;--mute:#98a89f;--line:#2c3932;--acc:#5cc29a;--ok:#6fd49b;--okbg:#1d3a2a;--no:#ff9a88;--nobg:#42231e;--na:#f0c964;--nabg:#3d3213;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);line-height:1.45}
+main{max-width:760px;margin:0 auto;padding:20px 14px 60px}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 16px}
+.bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:.9rem;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:var(--bg)}
+input[type=search]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;border-left-width:6px}
+.card.accepted{border-left-color:var(--ok)}.card.rejected{border-left-color:var(--no)}.card.noanswer{border-left-color:var(--na)}
+.card h2{font-size:1.1rem;margin:0 0 6px}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.links a{color:var(--acc);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.9rem}
+.links a.call{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:600}
+.st{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.st button{flex:1;min-width:96px;padding:9px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;cursor:pointer}
+.st button[aria-pressed=true][data-s=accepted]{background:var(--okbg);color:var(--ok);border-color:var(--ok);font-weight:600}
+.st button[aria-pressed=true][data-s=rejected]{background:var(--nobg);color:var(--no);border-color:var(--no);font-weight:600}
+.st button[aria-pressed=true][data-s=noanswer]{background:var(--nabg);color:var(--na);border-color:var(--na);font-weight:600}
+textarea{width:100%;min-height:60px;resize:vertical;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.foot{display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:.85rem;margin-top:16px}
+.foot button{background:none;border:none;color:var(--no);cursor:pointer;font:inherit;text-decoration:underline}
+.empty{text-align:center;color:var(--mute);padding:30px 0}
+</style></head><body><main>
+<h1>Restaurant calls</h1>
+<p class="sub" id="sum"></p>
+<input type="search" id="q" placeholder="Search by name or phone" aria-label="Search">
+<div class="bar" id="bar"></div>
+<div id="list"></div>
+<div class="foot"><span>Saved automatically in this browser.</span><button id="reset">Clear all results</button></div>
+</main>
+<script>
+const R=[{"id": 0, "name": "Restaurant Christine", "phone": "12064204781", "web": "https://restaurantchristineseattle.com/", "map": "https://maps.app.goo.gl/THKKnGf9BGBbVaL16"}, {"id": 1, "name": "Paolo's Italian", "phone": "12538502233", "web": "https://www.paolositalian.com/", "map": "https://maps.app.goo.gl/Q6jTcVnCZmFq1PiL7"}, {"id": 2, "name": "Time Out (MLT)", "phone": "14256725144", "web": "https://www.timeoutmlt.com/", "map": "https://maps.app.goo.gl/muoP4nQaFJLYQBGS6"}, {"id": 3, "name": "Heyday Seattle", "phone": "12068299816", "web": "https://www.heydayseattle.com/", "map": "https://maps.app.goo.gl/trDcN6rjmCm4ABJv9"}, {"id": 4, "name": "Duke's Seafood (Kent Station)", "phone": "12538506333", "web": "https://dukesseafood.com/locations/kent-station/?utm_source=google&utm_medium=organic&utm_campaign=gbp_website&utm_content=kent-station", "map": "https://maps.app.goo.gl/Dgs4ndoN2HYwGbj67"}, {"id": 5, "name": "THS Restaurant", "phone": "12064631800", "web": "https://thsrestaurant.com/", "map": "https://maps.app.goo.gl/MqsCWE2Udmo8PdUY9"}, {"id": 6, "name": "19 Gold Seattle", "phone": "12065880952", "web": "https://www.19goldseattle.com/", "map": "https://maps.app.goo.gl/boPzXDMhgVxdNNw3A"}, {"id": 7, "name": "Thian Thai", "phone": "12538629908", "web": "https://www.thianthai.com/", "map": "https://maps.app.goo.gl/QA7j7YGze6Drx3ss8"}, {"id": 8, "name": "Cactus Restaurants (Proctor)", "phone": "12534589900", "web": "https://www.cactusrestaurants.com/location/locations-proctor", "map": "https://maps.app.goo.gl/J8v9uPtk9UnbLCmR7"}, {"id": 9, "name": "Young's Restaurant White Center", "phone": "12067623438", "web": "https://www.youngsrestaurantwhitecenter.com/#Home", "map": "https://maps.app.goo.gl/hZFhUGK1v8okcqG16"}, {"id": 10, "name": "Nolita", "phone": "12067894933", "web": "https://www.nolitasea.com/", "map": "https://maps.app.goo.gl/xkSVKnqoGhEkCvRL6"}, {"id": 11, "name": "Geraldine's Counter", "phone": "12067232080", "web": "https://www.geraldinescounter.com/?utm_source=gmb", "map": "https://maps.app.goo.gl/1226BVtKxyD2zSVx7"}, {"id": 12, "name": "Greatest Thai", "phone": "12532364166", "web": "https://www.greatestthai.com/", "map": "https://maps.app.goo.gl/8wbo8DFRmjwtggNh6"}, {"id": 13, "name": "Sakuma Japanese", "phone": "14253473063", "web": "https://sakumajapanese.menu11.com/", "map": "https://maps.app.goo.gl/vt65AjKm6DyS958Q9"}, {"id": 14, "name": "Tapatio Mexican Restaurant", "phone": "14253730855", "web": "https://www.tapatiomexicanrestaurant.online/", "map": "https://maps.app.goo.gl/tuczjasqB3ecWS3b7"}, {"id": 15, "name": "Lucky Star Wa To Go", "phone": "12536303638", "web": "https://www.luckystarwatogo.com/", "map": "https://maps.app.goo.gl/HgAKy6qxCBvNvcch9"}, {"id": 16, "name": "My Thai Chili", "phone": "12538505887", "web": "https://www.mythaichili.com/", "map": "https://maps.app.goo.gl/CdF78TRecL4skT2T7"}, {"id": 17, "name": "Jai Thai Restaurant", "phone": "12066327060", "web": "https://jaithairestaurant.com/", "map": "https://maps.app.goo.gl/anDT2aPYLBDKJuR87"}, {"id": 18, "name": "Thai Kirkland", "phone": "14258210577", "web": "https://www.thaikirkland.com/", "map": "https://maps.app.goo.gl/ChUtdpT5fnuJQQgRA"}, {"id": 19, "name": "Azteca Mexican (Mountlake Terrace)", "phone": "14256720601", "web": "https://www.aztecamex.com/location/mountlake-terrace-azteca/", "map": "https://maps.app.goo.gl/XqpNHcxcN8LV9AeN6"}, {"id": 20, "name": "Great China Kirkland", "phone": "14258211624", "web": "https://www.greatchinakirkland.com/", "map": "https://maps.app.goo.gl/QFgp5nBDYECWkWrSA"}];
+const KEY="call-tracker-v1";
+let S={};
+try{S=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){S={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+let filter="all",query="";
+const F=[["all","All"],["todo","Not called"],["accepted","Accepted"],["rejected","Rejected"],["noanswer","Didn’t answer"]];
+function fmt(p){const d=String(p||"").replace(/\D/g,"");if(d.length===11&&d[0]==="1")return`+1 (${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`;return p||""}
+function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function render(){
+  const c={accepted:0,rejected:0,noanswer:0};
+  R.forEach(r=>{const s=(S[r.id]||{}).s;if(s)c[s]++});
+  const done=c.accepted+c.rejected+c.noanswer;
+  document.getElementById("sum").textContent=`${done} of ${R.length} called · ${c.accepted} accepted · ${c.rejected} rejected · ${c.noanswer} didn’t answer`;
+  document.getElementById("bar").innerHTML=F.map(([k,l])=>`<button class="chip" data-f="${k}" aria-pressed="${filter===k}">${l}</button>`).join("");
+  const q=query.toLowerCase().replace(/\s+/g," ").trim();
+  const rows=R.filter(r=>{
+    const s=(S[r.id]||{}).s;
+    if(filter==="todo"&&s)return false;
+    if(["accepted","rejected","noanswer"].includes(filter)&&s!==filter)return false;
+    if(q&&!(r.name.toLowerCase().includes(q)||String(r.phone).includes(q.replace(/\D/g,"")||"\u0000")))return false;
+    return true});
+  const L=document.getElementById("list");
+  if(!rows.length){L.innerHTML='<div class="empty">No restaurants match.</div>';return}
+  L.innerHTML=rows.map(r=>{
+    const st=S[r.id]||{},s=st.s||"";
+    const btn=(k,l)=>`<button data-id="${r.id}" data-s="${k}" aria-pressed="${s===k}">${l}</button>`;
+    return `<article class="card ${s}"><h2>${esc(r.name)}</h2>
+    <div class="links"><a class="call" href="tel:+${String(r.phone).replace(/\D/g,"")}">Call ${fmt(r.phone)}</a>
+    <a href="${esc(r.web)}" target="_blank" rel="noopener">Website</a>
+    <a href="${esc(r.map)}" target="_blank" rel="noopener">Google Maps</a></div>
+    <div class="st">${btn("accepted","Accepted")}${btn("rejected","Rejected")}${btn("noanswer","Didn’t answer")}</div>
+    <textarea data-id="${r.id}" placeholder="Notes" aria-label="Notes for ${esc(r.name)}">${esc(st.n)}</textarea></article>`}).join("");
+}
+document.addEventListener("click",e=>{
+  const f=e.target.closest("[data-f]");if(f){filter=f.dataset.f;render();return}
+  const b=e.target.closest(".st button");if(b){const id=b.dataset.id;const o=S[id]||{};o.s=o.s===b.dataset.s?"":b.dataset.s;S[id]=o;save();render();return}
+  if(e.target.id==="reset"&&confirm("Clear every status and note?")){S={};save();render()}
+});
+document.addEventListener("input",e=>{
+  if(e.target.id==="q"){query=e.target.value;render();document.getElementById("q").focus();return}
+  if(e.target.tagName==="TEXTAREA"){const id=e.target.dataset.id;const o=S[id]||{};o.n=e.target.value;S[id]=o;save()}
+});
+render();
+</script></body></html>
